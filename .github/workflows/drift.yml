@@ -2,7 +2,7 @@ name: drift
 
 on:
   schedule:
-    - cron: "45 15 * * *"
+    - cron: "10 16 * * *"
 
 permissions:
   id-token: write

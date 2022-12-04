@@ -1,7 +1,7 @@
 variable "aws_profile" {
   description = "terraform を実行する AWS ユーザーの profile 指定"
   type        = string
-  default     = "default"
+  default     = null
 }
 
 variable "assume_role_arn" {
