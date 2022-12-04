@@ -1,0 +1,62 @@
+name: drift
+
+on:
+  schedule:
+    - cron: "0 20 * * *"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+env:
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+  SLACK_USERNAME: github
+  SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+
+jobs:
+  drift:
+    name: Drift
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.BACKEND_ASSUME_ROLE_ARN }}
+          role-session-name: github-actions-terraform-drift-session
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: ${{ secrets.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init
+          -backend-config "region=${{ secrets.AWS_REGION }}"
+          -backend-config "bucket=${{ secrets.BACKEND_S3_BUCKET }}"
+
+      - name: Terraform Plan
+        run: terraform plan
+          -var "assume_role_arn=${{ secrets.ASSUME_ROLE_ARN }}"
+          -detailed-exitcode
+
+      - name: Nothing Drift
+        if: ${{ success() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: Nothing Drift
+          SLACK_COLOR: good
+
+      - name: Detect Drift
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_TITLE: Detect Drift
+          SLACK_COLOR: danger

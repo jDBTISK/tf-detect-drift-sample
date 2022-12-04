@@ -1,0 +1,8 @@
+.env
+
+.terraform
+.terraform-version
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.log
